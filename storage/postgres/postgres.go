@@ -24,10 +24,24 @@ func (psql *Postgres) Keep(short, longURL string) error {
 func (psql *Postgres) Extract(short string) (string, error) {
 	longURL := ""
 	query := "SELECT long FROM shortener WHERE short = $1;"
-	row := psql.db.QueryRow(query, short)
-	if err := row.Scan(&longURL); err != nil {
-		return "", fmt.Errorf("scan %s stmt: %v", query, err)
+	rows, err := psql.db.Query(query, short)
+	if err != nil {
+		return "", fmt.Errorf("query %s: %v", query, err)
 	}
+
+	// do not use method db.QueryRow above because
+	// github.com/lib/pq driver doesn't return an error
+	// when there are no sql.Rows
+	// so we do it for the driver
+	if !rows.Next() {
+		return "", sql.ErrNoRows
+	}
+
+	err = rows.Scan(&longURL)
+	if err != nil {
+		return "", fmt.Errorf("scan long url: %v", err)
+	}
+
 	return longURL, nil
 }
 
