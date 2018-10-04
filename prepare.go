@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/3timeslazy/chinchilla/handlers"
 	"github.com/3timeslazy/chinchilla/storage"
 	"github.com/3timeslazy/chinchilla/storage/postgres"
 
@@ -14,10 +15,11 @@ import (
 )
 
 func run() error {
+	h := handlers.New(mustStorage())
 	r := mux.NewRouter()
 
-	r.HandleFunc("/add", nil)
-	r.HandleFunc("/{short:[A-Za-z0-9]+}", nil)
+	r.HandleFunc("/add", h.Add).Methods("POST")
+	r.HandleFunc("/{short:[A-Za-z0-9]+}", h.Redirect).Methods("GET")
 
 	http.Handle("/", r)
 	fmt.Println("listen at :8080")
