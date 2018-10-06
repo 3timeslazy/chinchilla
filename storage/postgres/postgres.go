@@ -20,8 +20,8 @@ func (psql *Postgres) Keep(short, longURL string) error {
 	return nil
 }
 
-// Extract implements Storage.Extract method
-func (psql *Postgres) Extract(short string) (string, error) {
+// GetLongByShort returns long url by short
+func (psql *Postgres) GetLongByShort(short string) (string, error) {
 	longURL := ""
 	query := "SELECT long FROM shortener WHERE short = $1;"
 	rows, err := psql.db.Query(query, short)
@@ -29,12 +29,8 @@ func (psql *Postgres) Extract(short string) (string, error) {
 		return "", fmt.Errorf("query %s: %v", query, err)
 	}
 
-	// do not use method db.QueryRow above because
-	// github.com/lib/pq driver doesn't return an error
-	// when there are no sql.Rows
-	// so we do it for the driver
 	if !rows.Next() {
-		return "", sql.ErrNoRows
+		return "", nil
 	}
 
 	err = rows.Scan(&longURL)
@@ -43,6 +39,26 @@ func (psql *Postgres) Extract(short string) (string, error) {
 	}
 
 	return longURL, nil
+}
+
+// GetShortByLong returns short url by long
+func (psql *Postgres) GetShortByLong(longURL string) (string, error) {
+	query := "SELECT short FROM shortener WHERE long = $1;"
+	rows, err := psql.db.Query(query, longURL)
+	if err != nil {
+		return "", fmt.Errorf("query %s: %v", query, err)
+	}
+
+	if !rows.Next() {
+		return "", nil
+	}
+
+	var short string
+	if err = rows.Scan(&short); err != nil {
+		return "", fmt.Errorf("scan sql.Row: %v", err)
+	}
+
+	return short, nil
 }
 
 // New returns the new Postgres object

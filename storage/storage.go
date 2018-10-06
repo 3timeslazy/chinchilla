@@ -4,5 +4,6 @@ package storage
 // necessary for storing urls
 type Storage interface {
 	Keep(short, longURL string) error
-	Extract(short string) (string, error)
+	GetLongByShort(short string) (string, error)
+	GetShortByLong(longURL string) (string, error)
 }
